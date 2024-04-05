@@ -1,0 +1,34 @@
+{
+  "best_metric": 0.4666666666666667,
+  "best_model_checkpoint": "copd-train\\checkpoint-500",
+  "epoch": 55.55555555555556,
+  "eval_steps": 500,
+  "global_step": 500,
+  "is_hyper_param_search": false,
+  "is_local_process_zero": true,
+  "is_world_process_zero": true,
+  "log_history": [
+    {
+      "epoch": 55.56,
+      "learning_rate": 1.6296296296296297e-05,
+      "loss": 1.1051,
+      "step": 500
+    },
+    {
+      "epoch": 55.56,
+      "eval_accuracy": 0.4666666666666667,
+      "eval_loss": 1.219926357269287,
+      "eval_runtime": 0.0654,
+      "eval_samples_per_second": 458.487,
+      "eval_steps_per_second": 45.849,
+      "step": 500
+    }
+  ],
+  "logging_steps": 500,
+  "max_steps": 2700,
+  "num_train_epochs": 300,
+  "save_steps": 500,
+  "total_flos": 2.2337448247296e+16,
+  "trial_name": null,
+  "trial_params": null
+}

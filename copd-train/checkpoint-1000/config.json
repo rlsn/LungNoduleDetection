@@ -1,0 +1,35 @@
+{
+  "architectures": [
+    "ViTForImageClassification"
+  ],
+  "attention_probs_dropout_prob": 0.0,
+  "encoder_stride": 16,
+  "hidden_act": "gelu",
+  "hidden_dropout_prob": 0.0,
+  "hidden_size": 384,
+  "id2label": {
+    "0": "NT",
+    "1": "CLE",
+    "2": "PSE",
+    "3": "PLE"
+  },
+  "image_size": 256,
+  "initializer_range": 0.02,
+  "intermediate_size": 3072,
+  "label2id": {
+    "CLE": 1,
+    "NT": 0,
+    "PLE": 3,
+    "PSE": 2
+  },
+  "layer_norm_eps": 1e-12,
+  "model_type": "vit",
+  "num_attention_heads": 6,
+  "num_channels": 1,
+  "num_hidden_layers": 4,
+  "patch_size": 16,
+  "problem_type": "single_label_classification",
+  "qkv_bias": true,
+  "torch_dtype": "float32",
+  "transformers_version": "4.34.0"
+}
