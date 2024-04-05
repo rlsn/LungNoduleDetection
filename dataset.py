@@ -21,15 +21,18 @@ def read_csv(fn):
     return lines
 
 class CTED_Dataset(Dataset):
+    """
+    https://lauge-soerensen.github.io/emphysema-database/
+    """
     def __init__(self, split=None, transform=None):
-        label_csv = read_csv("data/slice_labels.csv")
-        severity_csv = read_csv("data/slice_severity.csv")
+        label_csv = read_csv("cted/slice_labels.csv")
+        severity_csv = read_csv("cted/slice_severity.csv")
 
         slice_data = []
         label_data = []
         severity_data = []
         for (f1,label),(f2,severity) in zip(label_csv,severity_csv):
-            im=read_tiff(f'data/slices/{f1}.tiff')
+            im=read_tiff(f'cted/slices/{f1}.tiff')
             slice_data.append(im)
             label_data.append(int(label)-1)
             severity_data.append(int(severity))
