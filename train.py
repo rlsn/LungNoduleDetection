@@ -60,6 +60,7 @@ def train(data_dir, log_dir):
         logging_steps=25,
         save_steps=500,
         save_total_limit=5,
+        dataloader_num_workers=8,
         load_best_model_at_end=True,
         metric_for_best_model="f1",
         label_names=["labels","bbox"],
