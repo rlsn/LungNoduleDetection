@@ -34,10 +34,10 @@ def add_marker(img, bbox):
     mark = np.zeros_like(img)
     new_img = np.copy(img)
     value = img.max() if new_img[center[0],center[1]]<(img.max()-img.min())/2 else img.min()
-    new_img[low[0]:high[0],low[1]]=value
-    new_img[low[0]:high[0],high[1]]=value
-    new_img[low[0],low[1]:high[1]]=value
-    new_img[high[0],low[1]:high[1]]=value
+    new_img[low[0]:high[0]+1,low[1]]=value
+    new_img[low[0]:high[0]+1,high[1]]=value
+    new_img[low[0],low[1]:high[1]+1]=value
+    new_img[high[0],low[1]:high[1]+1]=value
     return new_img
 
 def convert_loc(coord, origin, space):
