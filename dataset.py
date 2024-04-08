@@ -220,3 +220,4 @@ class LUNA16_Dataset(Dataset):
         pixel_values = pixel_values.unsqueeze(0)
         result["pixel_values"]=pixel_values
         return result
+    
