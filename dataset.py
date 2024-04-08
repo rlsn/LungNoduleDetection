@@ -123,8 +123,8 @@ def random_crop_around_3D(img, bbox, crop_size, margin=[5,20,20]):
     blow = blow.astype(int)
     bhigh = bhigh.astype(int)
     margin = np.array(margin)
-    low = np.maximum(bhigh+margin-crop_size,0)
-    high = np.minimum(blow-margin, im_size-crop_size)
+    low = np.minimum(np.maximum(bhigh+margin-crop_size, 0), im_size-crop_size)
+    high = np.minimum(np.maximum(blow-margin, 0), im_size-crop_size)
     offset = [np.random.randint(low[0], high=high[0]),
            np.random.randint(low[1], high=high[1]),
            np.random.randint(low[2], high=high[2])]
