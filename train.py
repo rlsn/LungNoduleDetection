@@ -34,15 +34,15 @@ def compute_metrics(eval_pred):
         iou = 1.0
     return dict(f1=f1, iou=iou)
 
-def train():
+def train(data_dir, log_dir):
     config = ViTConfig.from_pretrained("model_config.json")
     print(config)
     
     valid_split = [9]
     train_split = np.arange(9)
 
-    train_dataset = LUNA16_Dataset(split = train_split, data_dir="datasets/luna16", crop_size=config.image_size, patch_size=config.patch_size)
-    valid_dataset = LUNA16_Dataset(split = valid_split, data_dir="datasets/luna16", crop_size=config.image_size, patch_size=config.patch_size)
+    train_dataset = LUNA16_Dataset(split = train_split, data_dir=data_dir, crop_size=config.image_size, patch_size=config.patch_size)
+    valid_dataset = LUNA16_Dataset(split = valid_split, data_dir=data_dir, crop_size=config.image_size, patch_size=config.patch_size)
 
     model = VitDet3D(config)
 
@@ -55,13 +55,13 @@ def train():
         per_device_eval_batch_size=10,
         num_train_epochs=300,
         weight_decay=0.01,
-        logging_steps=500,
+        logging_steps=25,
         save_steps=500,
         save_total_limit=5,
         load_best_model_at_end=True,
         metric_for_best_model="f1",
         label_names=["labels","bbox"],
-        logging_dir='logs',
+        logging_dir=log_dir,
         remove_unused_columns=False,
     )
 
@@ -77,4 +77,4 @@ def train():
     trainer.train()
 
 if __name__=="__main__":
-    train()
+    train(data_dir="datasets/luna16", log_dir="logs")
