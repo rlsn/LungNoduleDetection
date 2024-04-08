@@ -1,2 +1,2 @@
-# COPD_Classificiation
- Using Vit to diagnse chronic obstructive pulmonary disease (COPD) from CT images
+# Lung Nodule Detection
+ Using 3d Vit to detect lung nodule from CT images
