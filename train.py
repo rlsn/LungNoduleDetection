@@ -39,7 +39,7 @@ def train():
     print(config)
     
     valid_split = [9]
-    train_split = np.array(9)
+    train_split = np.arange(9)
 
     train_dataset = LUNA16_Dataset(split = train_split, data_dir="datasets/luna16", crop_size=config.image_size, patch_size=config.patch_size)
     valid_dataset = LUNA16_Dataset(split = valid_split, data_dir="datasets/luna16", crop_size=config.image_size, patch_size=config.patch_size)
