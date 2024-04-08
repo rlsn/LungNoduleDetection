@@ -34,15 +34,15 @@ def compute_metrics(eval_pred):
         iou = 1.0
     return dict(f1=f1, iou=iou)
 
-if __name__=="__main__":
+def train():
     config = ViTConfig.from_pretrained("model_config.json")
     print(config)
     
     valid_split = [9]
     train_split = np.array(9)
 
-    train_dataset = LUNA16_Dataset(split = train_split, data_dir="datasets/luna16")
-    valid_dataset = LUNA16_Dataset(split = valid_split, data_dir="datasets/luna16")
+    train_dataset = LUNA16_Dataset(split = train_split, data_dir="datasets/luna16", crop_size=config.image_size, patch_size=config.patch_size)
+    valid_dataset = LUNA16_Dataset(split = valid_split, data_dir="datasets/luna16", crop_size=config.image_size, patch_size=config.patch_size)
 
     model = VitDet3D(config)
 
@@ -75,3 +75,6 @@ if __name__=="__main__":
     )
 
     trainer.train()
+
+if __name__=="__main__":
+    train()
