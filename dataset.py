@@ -182,7 +182,7 @@ class LUNA16_Dataset(Dataset):
         
         result = dict()
         
-        if len(coords)>0 and np.random.rand()<1:
+        if len(coords)>0 and np.random.rand()<0.5:
             # crop with a nodule
             target_idx = np.random.randint(len(coords))
             coord = coords[target_idx]
