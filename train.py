@@ -41,9 +41,11 @@ def train(data_dir, log_dir):
     valid_split = [9]
     train_split = np.arange(9)
 
+    print("preparing datasets")
     train_dataset = LUNA16_Dataset(split = train_split, data_dir=data_dir, crop_size=config.image_size, patch_size=config.patch_size)
     valid_dataset = LUNA16_Dataset(split = valid_split, data_dir=data_dir, crop_size=config.image_size, patch_size=config.patch_size)
 
+    print("preparing model")
     model = VitDet3D(config)
 
     args = TrainingArguments(
@@ -64,7 +66,8 @@ def train(data_dir, log_dir):
         logging_dir=log_dir,
         remove_unused_columns=False,
     )
-
+    print(args)
+    
     trainer = Trainer(
         model,
         args,
@@ -73,7 +76,7 @@ def train(data_dir, log_dir):
         data_collator=collate_fn,
         compute_metrics=compute_metrics,
     )
-
+    print("commence training")
     trainer.train()
 
 if __name__=="__main__":
