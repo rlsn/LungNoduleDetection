@@ -1,7 +1,6 @@
 """
 rlsn 2024
 """
-import SimpleITK as sitk
 import numpy as np
 import torch
 from torch.utils.data import Dataset
@@ -10,6 +9,7 @@ from PIL import Image
 
 def read_image(image_file, meta=False):
     if meta:
+        import SimpleITK as sitk
         # Read the MetaImage file
         image = sitk.ReadImage(image_file, imageIO="MetaImageIO")
         image_array = sitk.GetArrayFromImage(image)
@@ -144,7 +144,7 @@ def random_crop_around_3D(img, bbox, crop_size, margin=[5,20,20]):
     bhigh = bhigh.astype(int)
     margin = np.array(margin)
     low = np.minimum(np.maximum(bhigh+margin-crop_size, 0), im_size-crop_size)
-    high = np.minimum(np.maximum(blow-margin, 0), im_size-crop_size)+1
+    high = np.minimum(np.maximum(blow-margin, low), im_size-crop_size)+1
     offset = [np.random.randint(low[0], high=high[0]),
            np.random.randint(low[1], high=high[1]),
            np.random.randint(low[2], high=high[2])]
@@ -159,9 +159,9 @@ def random_flip(img, axis):
         return img
 
 def collate_fn(examples):
-    pixel_values = torch.stack([example["pixel_values"] for example in examples])
-    labels = torch.stack([example["label"] for example in examples])
-    bbox = torch.stack([example["bbox"] for example in examples])
+    pixel_values = torch.cat([example["pixel_values"] for example in examples], 0)
+    labels = torch.cat([example["labels"] for example in examples], 0)
+    bbox = torch.cat([example["bbox"] for example in examples], 0)
 
     return {"pixel_values": pixel_values, "labels": labels, "bbox":bbox}
 
@@ -171,7 +171,7 @@ class LUNA16_Dataset(Dataset):
     """
     https://luna16.grand-challenge.org/
     """
-    def __init__(self, split=None, data_dir=".", crop_size=[40,128,128], patch_size=[4,16,16], return_bbox=False):
+    def __init__(self, split=None, data_dir=".", crop_size=[40,128,128], patch_size=[4,16,16], return_bbox=False, samples_per_img = 4):
         annotations_csv = read_csv(f"{data_dir}/annotations.csv")[1:]
         data_subsets = survey_dataset(data_dir)
         # to filenames
@@ -190,6 +190,7 @@ class LUNA16_Dataset(Dataset):
         self.patch_size = np.array(patch_size)
 
         self.return_bbox = return_bbox
+        self.samples_per_img = samples_per_img
     def __len__(self):
         return len(self.filenames)
 
@@ -200,44 +201,50 @@ class LUNA16_Dataset(Dataset):
         coords = self.annotations[uid]
         patch_size_mm = self.patch_size * space[::-1]
         
-        result = dict()
+        result = dict(pixel_values=[],labels=[],bbox=[],bbox_imgs=[])
         
-        if len(coords)>0 and np.random.rand()<0.5:
-            # crop with a nodule
-            target_idx = np.random.randint(len(coords))
-            coord = coords[target_idx]
+        for i in range(self.samples_per_img):
+            if len(coords)>0 and np.random.rand()<0.5:
+                # crop with a nodule
+                target_idx = np.random.randint(len(coords))
+                coord = coords[target_idx]
 
-            bbox = convert_bounding_box(coord, origin, space)
-            cropped_img, offset = random_crop_around_3D(image, bbox, self.crop_size)
-            offset_bbox = bbox[0] - offset, bbox[1] - offset
-            target = np.concatenate([offset_bbox[0]/self.crop_size, offset_bbox[1]/self.crop_size])
-            
-            result["label"] = torch.tensor(1)
-            result["bbox"] = torch.tensor(target).to(torch.float32)
-            
-            # for debugging
-            if self.return_bbox:
-                marked_imgs = mark_bbox(cropped_img, offset_bbox)
-                result["bbox_imgs"]=marked_imgs
-        else:
-            # random crop
-            cropped_img = random_crop_3D(image, self.crop_size)
-            result["label"] = torch.tensor(0)
-            result["bbox"] = torch.zeros(6)
+                bbox = convert_bounding_box(coord, origin, space)
+                cropped_img, offset = random_crop_around_3D(image, bbox, self.crop_size)
+                offset_bbox = bbox[0] - offset, bbox[1] - offset
+                target = np.concatenate([offset_bbox[0]/self.crop_size, offset_bbox[1]/self.crop_size])
+                
+                result["labels"].append(torch.tensor(1))
+                result["bbox"].append(torch.tensor(target).to(torch.float32))
+                
+                # for debugging
+                if self.return_bbox:
+                    marked_imgs = mark_bbox(cropped_img, offset_bbox)
+                    result["bbox_imgs"].append(marked_imgs)
+            else:
+                # random crop
+                cropped_img = random_crop_3D(image, self.crop_size)
+                result["labels"].append(torch.tensor(0))
+                result["bbox"].append(torch.zeros(6))
 
-            
-        # random flip
-        pixel_values = random_flip(cropped_img, 0)
-        pixel_values = random_flip(pixel_values, 1)
-        pixel_values = random_flip(pixel_values, 2)
+                
+            # random flip
+            pixel_values = random_flip(cropped_img, 0)
+            pixel_values = random_flip(pixel_values, 1)
+            pixel_values = random_flip(pixel_values, 2)
 
-        # normalize
-        pixel_values = (pixel_values-LUNA16_Dataset.mean)/LUNA16_Dataset.std
+            # normalize
+            pixel_values = (pixel_values-LUNA16_Dataset.mean)/LUNA16_Dataset.std
 
-        # to tensor
-        pixel_values = torch.tensor(pixel_values.copy()).to(torch.float32)
-        # add channel dim
-        pixel_values = pixel_values.unsqueeze(0)
-        result["pixel_values"]=pixel_values
+            # to tensor
+            pixel_values = torch.tensor(pixel_values.copy()).to(torch.float32)
+            # add channel dim
+            pixel_values = pixel_values.unsqueeze(0)
+            result["pixel_values"].append(pixel_values)
+
+        result["pixel_values"] = torch.stack(result["pixel_values"])
+        result["labels"] = torch.stack(result["labels"])
+        result["bbox"] = torch.stack(result["bbox"])
+
         return result
     

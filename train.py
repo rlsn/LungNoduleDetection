@@ -42,8 +42,8 @@ def train(data_dir, log_dir):
     train_split = np.arange(9)
 
     print("preparing datasets")
-    train_dataset = LUNA16_Dataset(split = train_split, data_dir=data_dir, crop_size=config.image_size, patch_size=config.patch_size)
-    valid_dataset = LUNA16_Dataset(split = valid_split, data_dir=data_dir, crop_size=config.image_size, patch_size=config.patch_size)
+    train_dataset = LUNA16_Dataset(split = train_split, data_dir=data_dir, crop_size=config.image_size, patch_size=config.patch_size, samples_per_img=8)
+    valid_dataset = LUNA16_Dataset(split = valid_split, data_dir=data_dir, crop_size=config.image_size, patch_size=config.patch_size, samples_per_img=8)
 
     print("preparing model")
     model = VitDet3D(config)
@@ -53,12 +53,12 @@ def train(data_dir, log_dir):
         save_strategy="steps",
         evaluation_strategy="steps",
         learning_rate=2e-5,
-        per_device_train_batch_size=10,
-        per_device_eval_batch_size=10,
+        per_device_train_batch_size=4,
+        per_device_eval_batch_size=4,
         num_train_epochs=300,
         weight_decay=0.01,
         logging_steps=25,
-        save_steps=500,
+        save_steps=100,
         save_total_limit=5,
         dataloader_num_workers=8,
         load_best_model_at_end=True,
