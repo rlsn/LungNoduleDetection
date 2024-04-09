@@ -8,23 +8,43 @@ from torch.utils.data import Dataset
 import glob, os
 from PIL import Image
 
-def read_image(image_file):
-    # Read the MetaImage file
-    image = sitk.ReadImage(image_file, imageIO="MetaImageIO")
-    image_array = sitk.GetArrayFromImage(image)
+def read_image(image_file, meta=False):
+    if meta:
+        # Read the MetaImage file
+        image = sitk.ReadImage(image_file, imageIO="MetaImageIO")
+        image_array = sitk.GetArrayFromImage(image)
 
-    # print the image's dimensions
-    return image_array, np.array(image.GetOrigin()), np.array(image.GetSpacing())
+        # print the image's dimensions
+        return image_array, np.array(image.GetOrigin()), np.array(image.GetSpacing())
+    else:
+        # npy file
+        re = np.load(image_file, allow_pickle=True).item()
+        return re["img"], re["origin"], re["space"]
+
+def preprocess(datadir):
+    for i in range(10):
+        filenames = glob.glob(f"{datadir}/subset{i}/*mhd")
+        target_dir=f"{datadir}/subset{i}_npy"
+        os.makedirs(target_dir, exist_ok=True)
+        for fn in filenames:
+            print("processing",fn)
+            img, origin, space = read_image(fn,meta=True)
+            bn = os.path.basename(fn)
+            obj = dict(img=img,origin=origin,space=space)
+            np.save(f"{target_dir}/{bn[:-3]}npy",obj)
 
 def read_csv(fn):
     with open(fn,"r") as f:
         lines = [l.strip().split(",") for l in f.readlines()]
     return lines
   
-def survey_dataset(datadir="."):
+def survey_dataset(datadir=".",npy=True):
     data_split = dict()
     for i in range(10):
-        files = glob.glob(f"{datadir}/subset{i}/*mhd")
+        if npy:
+            files = glob.glob(f"{datadir}/subset{i}_npy/*npy")
+        else:
+            files = glob.glob(f"{datadir}/subset{i}/*mhd")
         data_split[i]=files
     return data_split
 
