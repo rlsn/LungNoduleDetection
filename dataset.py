@@ -102,10 +102,6 @@ def export_as_gif(filename, image_array, frames_per_second=10, rubber_band=False
         loop=0,
     )
 
-
-from torch.utils.data import Dataset
-import torch
-
 # compute mean and std
 def compute_stats(dataset):
     N = 0
@@ -166,8 +162,8 @@ def collate_fn(examples):
     return {"pixel_values": pixel_values, "labels": labels, "bbox":bbox}
 
 class LUNA16_Dataset(Dataset):
-    mean = -718.0491779355748
-    std = 889.6629126452339
+    mean = -775.657161489884
+    std = 962.3208802005623
     """
     https://luna16.grand-challenge.org/
     """
@@ -247,4 +243,3 @@ class LUNA16_Dataset(Dataset):
         result["bbox"] = torch.stack(result["bbox"])
 
         return result
-    

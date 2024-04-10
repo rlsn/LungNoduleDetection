@@ -1,2 +1,7 @@
 
 __pycache__/dataset.cpython-311.pyc
+/datasets
+/logs
+/luna-train
+/__pycache__
+/.ipynb_checkpoints
