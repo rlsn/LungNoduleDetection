@@ -13,9 +13,9 @@
   "intermediate_size": 1024,
   "layer_norm_eps": 1e-12,
   "model_type": "vit",
-  "num_attention_heads": 8,
+  "num_attention_heads": 6,
   "num_channels": 1,
-  "num_hidden_layers": 6,
+  "num_hidden_layers": 4,
   "qkv_bias": true,
   "torch_dtype": "float32",
   "transformers_version": "4.34.0"
