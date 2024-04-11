@@ -34,7 +34,7 @@ def compute_metrics(eval_pred):
         iou = 1.0
     return dict(f1=f1, iou=iou)
 
-def train(data_dir, log_dir):
+def train(data_dir, log_dir, model_dir=None):
     config = ViTConfig.from_pretrained("model_config.json")
     print(config)
     
@@ -48,8 +48,11 @@ def train(data_dir, log_dir):
     print("preparing model")
     model = VitDet3D(config)
 
+    if model_dir is None:
+        model_dir = "luna-train"
+
     args = TrainingArguments(
-        f"luna-train",
+        model_dir,
         resume_from_checkpoint=None,
         save_strategy="steps",
         evaluation_strategy="steps",
