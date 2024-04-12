@@ -26,7 +26,7 @@ def compute_metrics(eval_pred):
     bbox_pred = predictions[1][mask]
     bbox = groundtruth[1][mask]
 
-    preds = (logits>0.5).astype(int)
+    preds = (logits>0).astype(int)
     f1 = f1_score(labels, preds)
     if bbox.shape[0]>0:
         iou = iou_3d(bbox_pred,bbox)
@@ -34,7 +34,7 @@ def compute_metrics(eval_pred):
         iou = 1.0
     return dict(f1=f1, iou=iou)
 
-def train(data_dir, log_dir, model_dir=None):
+def train(data_dir, log_dir, model_dir=None, resume=True):
     config = ViTConfig.from_pretrained("model_config.json")
     print(config)
     
@@ -42,8 +42,8 @@ def train(data_dir, log_dir, model_dir=None):
     train_split = np.arange(9)
 
     print("preparing datasets")
-    train_dataset = LUNA16_Dataset(split = train_split, data_dir=data_dir, crop_size=config.image_size, patch_size=config.patch_size, samples_per_img=8)
-    valid_dataset = LUNA16_Dataset(split = valid_split, data_dir=data_dir, crop_size=config.image_size, patch_size=config.patch_size, samples_per_img=8)
+    train_dataset = LUNA16_Dataset(split = train_split, data_dir=data_dir, crop_size=config.image_size, patch_size=config.patch_size, samples_per_img=16)
+    valid_dataset = LUNA16_Dataset(split = valid_split, data_dir=data_dir, crop_size=config.image_size, patch_size=config.patch_size, samples_per_img=16)
 
     print("preparing model")
     model = VitDet3D(config)
@@ -53,12 +53,11 @@ def train(data_dir, log_dir, model_dir=None):
 
     args = TrainingArguments(
         model_dir,
-        resume_from_checkpoint=None,
         save_strategy="steps",
         evaluation_strategy="steps",
         learning_rate=2e-5,
-        per_device_train_batch_size=4,
-        per_device_eval_batch_size=4,
+        per_device_train_batch_size=2,
+        per_device_eval_batch_size=2,
         max_steps=1000000,
         weight_decay=0.01,
         eval_steps=5000,
@@ -84,7 +83,8 @@ def train(data_dir, log_dir, model_dir=None):
         compute_metrics=compute_metrics,
     )
     print("commence training")
-    trainer.train()
+        
+    trainer.train(resume_from_checkpoint=resume)
 
 if __name__=="__main__":
-    train(data_dir="datasets/luna16", log_dir="logs")
+    train(data_dir="datasets/luna16", log_dir="logs", model_dir="luna-train", resume=False)

@@ -5,6 +5,7 @@ from transformers import PreTrainedModel
 from transformers.utils import ModelOutput
 from transformers.models.vit.modeling_vit import ViTPooler, ViTEncoder
 from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
+from transformers import ViTConfig
 import torch
 import torch.nn as nn
 import numpy as np
@@ -50,16 +51,16 @@ class CNNFeatureExtractor(nn.Module):
         super().__init__()
         patch_size = config.patch_size
         image_size = config.image_size
-        self.in_channels = 128
+        self.in_channels = 64
         self.out_size = [3, 8, 8]
         self.conv1 = nn.Conv3d(config.num_channels, self.in_channels, kernel_size=7, stride=2, padding=3, bias=False)
         self.bn1 = nn.BatchNorm3d(self.in_channels)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool3d(kernel_size=3, stride=2, padding=1)
 
-        self.layer1 = self._make_layer(128, 2)
-        self.layer2 = self._make_layer(256, 2, stride=2)
-        self.layer3 = self._make_layer(512, 2, stride=2)
+        self.layer1 = self._make_layer(64, 2)
+        self.layer2 = self._make_layer(128, 2, stride=2)
+        self.layer3 = self._make_layer(256, 2, stride=2)
 
         # self.avgpool = nn.AdaptiveAvgPool3d(self.out_size)
 
@@ -126,6 +127,7 @@ class MLP(nn.Module):
         return x
 
 class VitDet3D(PreTrainedModel):
+    config_class = ViTConfig
     def __init__(self, config, add_pooling_layer = True):
         super().__init__(config)
         self.cnn = CNNFeatureExtractor(config)
