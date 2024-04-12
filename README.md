@@ -1,7 +1,7 @@
 # Lung Nodule Detection
 Using a 3D Vision Transformer (ViT) to detect lung nodules from CT images through end-to-end training. The model is trained on [Luna16](https://luna16.grand-challenge.org/Home/) dataset consisting of 888 CT scans. A typical data point is shown below.
 
-<img src = "imgs/sample.gif" width ="80%" />
+<img src = "imgs/sample.gif" width ="50%" />
 
 <img src = "imgs/nodule_sample_0.gif" width ="22%" /><img src = "imgs/nodule_sample_1.gif" width ="22%" /><img src = "imgs/nodule_sample_2.gif" width ="22%" /><img src = "imgs/nodule_sample_3.gif" width ="22%" />
 
