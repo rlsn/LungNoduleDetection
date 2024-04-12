@@ -31,4 +31,4 @@ Ground Truth Bounding Boxes:
 <img src = "imgs/gt_bbox_0.gif" width ="22%" /><img src = "imgs/gt_bbox_3.gif" width ="22%" /><img src = "imgs/gt_bbox_7.gif" width ="22%" /><img src = "imgs/gt_bbox_62.gif" width ="22%" />
 
 
-See [`eval.ipynb`](./eval.ipynb) for details. This checkpoint is available to download at [here](https://huggingface.co/rlsn/DeTr4LungNodule)
+See [`eval.ipynb`](./eval.ipynb) for details. This checkpoint is available for download [here](https://huggingface.co/rlsn/DeTr4LungNodule)
