@@ -145,7 +145,7 @@ def random_crop_around_3D(img, bbox, crop_size, margin=[5,20,20]):
            np.random.randint(low[2], high=high[2])]
     return img[offset[0]:offset[0]+crop_size[0],
                offset[1]:offset[1]+crop_size[1],
-               offset[2]:offset[2]+crop_size[2]], offset
+               offset[2]:offset[2]+crop_size[2]], np.array(offset)
 
 def random_flip(img, bbox, axis=0):
     if np.random.rand()<0.5:
@@ -239,10 +239,13 @@ class LUNA16_Dataset(Dataset):
             else:
                 # random crop a negative patch
                 cropped_img, offset = random_crop_3D(image, self.crop_size)
-                img_bbox = np.concatenate([np.array(offset), np.array(offset)+self.crop_size])
-                if len(bboxes>0) and np.sum([iou_3d(img_bbox, bbox) for bbox in bboxes])>0:
+                img_bbox = np.concatenate([offset, offset+self.crop_size],0)
+                img_bbox = np.expand_dims(img_bbox, 0)
+                if len(bboxes)>0:
                     # account for the possibility that a positive is contained
-                    continue
+                    iou = [iou_3d(img_bbox, np.expand_dims(np.concatenate(bbox,0),0)) for bbox in bboxes]
+                    if np.sum(iou)>0:
+                        continue
                 result["labels"].append(torch.tensor(0))
                 bbox = torch.zeros(6)
                 if self.return_bbox:
