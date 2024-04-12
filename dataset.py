@@ -48,15 +48,6 @@ def survey_dataset(datadir=".",npy=True):
         data_split[i]=files
     return data_split
 
-def add_marker(img, bbox, value):
-    low, high = bbox
-    new_img = np.copy(img)
-    new_img[low[0]:high[0]+1,low[1]]=value
-    new_img[low[0]:high[0]+1,high[1]]=value
-    new_img[low[0],low[1]:high[1]+1]=value
-    new_img[high[0],low[1]:high[1]+1]=value
-    return new_img
-
 def convert_loc(coord, origin, space):
     displacement = np.array(coord[:3]).astype(float)-origin
     loc = np.round(displacement/space)[::-1]
@@ -76,20 +67,31 @@ def convert_bounding_box(coord, origin, space):
 def mark_bbox(img, bbox):
     img_size = np.array(img.shape)
     low, high = bbox[:3], bbox[3:]
-    low=(low*img_size).astype(int)
-    high=(high*img_size).astype(int)
-    center = ((low+high)/2).astype(int)
-    value = img.max() if img[center[0],center[1],center[2]]<(img.max()-img.min())/2 else img.min()
-    marked_imgs = np.copy(img)
-    for z in range(low[0],high[0]+1):
-        marked_imgs[z] = add_marker(img[z],(low[1:],high[1:]), value)
-    return marked_imgs
+    low=np.clip((low*img_size).astype(int), 0, img_size-1)    
+    high=np.clip((high*img_size).astype(int), 0, img_size-1)
+    bbox_imgs = np.zeros_like(img)
+    zl,xl,yl = low
+    zh,xh,yh = high
 
-def export_as_gif(filename, image_array, frames_per_second=10, rubber_band=False):
+    for z in range(zl,zh+1):
+        bbox_imgs[z,xl:xh+1,yl]=1
+        bbox_imgs[z,xl:xh+1,yh]=1
+        bbox_imgs[z,xl,yl:yh+1]=1
+        bbox_imgs[z,xh,yl:yh+1]=1
+
+    return bbox_imgs
+
+def export_as_gif(filename, image_array, mark=None, frames_per_second=10, rubber_band=False):
     images = []
     image_array = (image_array-image_array.min())/(image_array.max()-image_array.min())
-    for arr in image_array:
-        im = Image.fromarray(np.uint8(arr*255))
+
+    for i, arr in enumerate(image_array):
+        im = arr*255
+        im = np.repeat(im[:, :, np.newaxis], 3, axis=2)
+        if mark is not None:
+            im[:,:,0] += mark[i]*255
+            im = np.clip(im,0,255)
+        im = Image.fromarray(im.astype(np.uint8))
         images.append(im)
     if rubber_band:
         images += images[2:-1][::-1]
@@ -178,7 +180,7 @@ class LUNA16_Dataset(Dataset):
     """
     https://luna16.grand-challenge.org/
     """
-    def __init__(self, split=None, data_dir=".", crop_size=[40,128,128], patch_size=[4,16,16], return_bbox=False, samples_per_img = 8):
+    def __init__(self, split=None, data_dir=".", crop_size=[40,128,128], patch_size=[4,16,16], samples_per_img = 8):
         annotations_csv = read_csv(f"{data_dir}/annotations.csv")[1:]
         data_subsets = survey_dataset(data_dir)
         # to filenames
@@ -196,7 +198,6 @@ class LUNA16_Dataset(Dataset):
         self.crop_size = np.array(crop_size)
         self.patch_size = np.array(patch_size)
 
-        self.return_bbox = return_bbox
         self.samples_per_img = samples_per_img
         self.max_sampling_times = max(LUNA16_Dataset.max_sampling_times, self.samples_per_img)
     def __len__(self):
@@ -230,11 +231,6 @@ class LUNA16_Dataset(Dataset):
                 
                 result["labels"].append(torch.tensor(1))
                 bbox = torch.tensor(target).to(torch.float32)
-                
-                # for debugging
-                if self.return_bbox:
-                    marked_imgs = mark_bbox(cropped_img, target)
-                    result["bbox_imgs"].append(marked_imgs)
                 i+=1
             else:
                 # random crop a negative patch
@@ -248,8 +244,6 @@ class LUNA16_Dataset(Dataset):
                         continue
                 result["labels"].append(torch.tensor(0))
                 bbox = torch.zeros(6)
-                if self.return_bbox:
-                    result["bbox_imgs"].append(None)
                 i+=1
                 
             # random flip (also flip the bbox)
