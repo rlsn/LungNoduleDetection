@@ -5,7 +5,7 @@ Using a 3D Vision Transformer (ViT) to detect lung nodules from CT images throug
 
 <img src = "imgs/nodule_sample_0.gif" width ="22%" /><img src = "imgs/nodule_sample_1.gif" width ="22%" /><img src = "imgs/nodule_sample_2.gif" width ="22%" /><img src = "imgs/nodule_sample_3.gif" width ="22%" />
 
-## Data preprocessing
+## Data processing
 The data is already stored in metaImage format and is loaded and processed at runtime. Use `dataset.preprocess()` to convert raw files to npy files for faster loading.
 The preprocessing procedure is simple: the images are randomly cropped into patches of size [40,128,128], normalized and randomly flipped. The dataset is split into 10 subsets and 1 of them is held out for testing.
 
@@ -31,4 +31,4 @@ Ground Truth Bounding Boxes:
 <img src = "imgs/gt_bbox_0.gif" width ="22%" /><img src = "imgs/gt_bbox_3.gif" width ="22%" /><img src = "imgs/gt_bbox_7.gif" width ="22%" /><img src = "imgs/gt_bbox_62.gif" width ="22%" />
 
 
-See [`eval.ipynb`](./eval.ipynb) for details.
+See [`eval.ipynb`](./eval.ipynb) for details. This checkpoint is available to download at [here](https://huggingface.co/rlsn/DeTr4LungNodule)
