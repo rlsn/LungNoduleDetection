@@ -130,7 +130,7 @@ def random_crop_3D(img, crop_size):
            np.random.randint(0, high=high[2])]
     return img[start[0]:start[0]+crop_size[0],
                start[1]:start[1]+crop_size[1],
-               start[2]:start[2]+crop_size[2]]
+               start[2]:start[2]+crop_size[2]], start
 
 def random_crop_around_3D(img, bbox, crop_size, margin=[5,20,20]):
     im_size = np.array(img.shape)
@@ -156,6 +156,14 @@ def random_flip(img, bbox, axis=0):
     else:
         return img, bbox
 
+def iou_3d(bbox_pred,bbox):
+    ilow = np.maximum(bbox_pred,bbox)[:,:3]
+    ihigh = np.minimum(bbox_pred,bbox)[:,3:]
+    i_sides = np.maximum(ihigh-ilow,0)
+    i_vol = np.prod(i_sides,-1)
+    o_vol = np.prod(bbox_pred[:,3:]-bbox_pred[:,:3],-1)+np.prod(bbox[:,3:]-bbox[:,:3],-1)-i_vol
+    return (i_vol/o_vol).mean()
+
 def collate_fn(examples):
     pixel_values = torch.cat([example["pixel_values"] for example in examples], 0)
     labels = torch.cat([example["labels"] for example in examples], 0)
@@ -166,6 +174,7 @@ def collate_fn(examples):
 class LUNA16_Dataset(Dataset):
     mean = -775.657161489884
     std = 962.3208802005623
+    max_sampling_times = 64
     """
     https://luna16.grand-challenge.org/
     """
@@ -189,6 +198,7 @@ class LUNA16_Dataset(Dataset):
 
         self.return_bbox = return_bbox
         self.samples_per_img = samples_per_img
+        self.max_sampling_times = max(LUNA16_Dataset.max_sampling_times, self.samples_per_img)
     def __len__(self):
         return len(self.filenames)
 
@@ -201,13 +211,19 @@ class LUNA16_Dataset(Dataset):
         
         result = dict(pixel_values=[],labels=[],bbox=[],bbox_imgs=[])
         
-        for i in range(self.samples_per_img):
-            if len(coords)>0 and np.random.rand()<0.5:
-                # crop a patch with a nodule
-                target_idx = np.random.randint(len(coords))
-                coord = coords[target_idx]
+        bboxes = []
+        for coord in coords:
+            bboxes.append(convert_bounding_box(coord, origin, space))
 
-                bbox = convert_bounding_box(coord, origin, space)
+        i = 0
+        while i<self.samples_per_img:
+            if i>self.max_sampling_times:
+                break
+            if len(bboxes)>0 and np.random.rand()<0.5:
+                # crop a patch with a random nodule
+                # TODO: needs to account for the possibility that multiple nodules are contained
+                bbox = bboxes[np.random.randint(len(bboxes))]
+
                 cropped_img, offset = random_crop_around_3D(image, bbox, self.crop_size)
                 offset_bbox = bbox[0] - offset, bbox[1] - offset
                 target = np.concatenate([offset_bbox[0]/self.crop_size, offset_bbox[1]/self.crop_size])
@@ -219,14 +235,19 @@ class LUNA16_Dataset(Dataset):
                 if self.return_bbox:
                     marked_imgs = mark_bbox(cropped_img, target)
                     result["bbox_imgs"].append(marked_imgs)
+                i+=1
             else:
                 # random crop a negative patch
-                # TODO: needs modification to account for the possibility that a positive is contained
-                cropped_img = random_crop_3D(image, self.crop_size)
+                cropped_img, offset = random_crop_3D(image, self.crop_size)
+                img_bbox = np.concatenate([np.array(offset), np.array(offset)+self.crop_size])
+                if len(bboxes>0) and np.sum([iou_3d(img_bbox, bbox) for bbox in bboxes])>0:
+                    # account for the possibility that a positive is contained
+                    continue
                 result["labels"].append(torch.tensor(0))
                 bbox = torch.zeros(6)
                 if self.return_bbox:
                     result["bbox_imgs"].append(None)
+                i+=1
                 
             # random flip (also flip the bbox)
             pixel_values, bbox = random_flip(cropped_img, bbox, 0)

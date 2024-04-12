@@ -3,19 +3,11 @@ rlsn 2024
 """
 import numpy as np
 import torch
-from dataset import LUNA16_Dataset, collate_fn
+from dataset import LUNA16_Dataset, collate_fn, iou_3d
 from transformers import ViTConfig
 from model import VitDet3D
 from transformers import TrainingArguments, Trainer
 from sklearn.metrics import f1_score
-
-def iou_3d(bbox_pred,bbox):
-    ilow = np.maximum(bbox_pred,bbox)[:,:3]
-    ihigh = np.minimum(bbox_pred,bbox)[:,3:]
-    i_sides = np.maximum(ihigh-ilow,0)
-    i_vol = np.prod(i_sides,-1)
-    o_vol = np.prod(bbox_pred[:,3:]-bbox_pred[:,:3],-1)+np.prod(bbox[:,3:]-bbox[:,:3],-1)-i_vol
-    return (i_vol/o_vol).mean()
 
 def compute_metrics(eval_pred):
     predictions, groundtruth = eval_pred
