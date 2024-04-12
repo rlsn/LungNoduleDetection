@@ -48,12 +48,9 @@ def survey_dataset(datadir=".",npy=True):
         data_split[i]=files
     return data_split
 
-def add_marker(img, bbox):
+def add_marker(img, bbox, value):
     low, high = bbox
-    center = ((low+high)/2).astype(int)
-    mark = np.zeros_like(img)
     new_img = np.copy(img)
-    value = img.max() if new_img[center[0],center[1]]<(img.max()-img.min())/2 else img.min()
     new_img[low[0]:high[0]+1,low[1]]=value
     new_img[low[0]:high[0]+1,high[1]]=value
     new_img[low[0],low[1]:high[1]+1]=value
@@ -81,10 +78,11 @@ def mark_bbox(img, bbox):
     low, high = bbox[:3], bbox[3:]
     low=(low*img_size).astype(int)
     high=(high*img_size).astype(int)
-
+    center = ((low+high)/2).astype(int)
+    value = img.max() if img[center[0],center[1],center[2]]<(img.max()-img.min())/2 else img.min()
     marked_imgs = np.copy(img)
     for z in range(low[0],high[0]+1):
-        marked_imgs[z] = add_marker(img[z],(low[1:],high[1:]))
+        marked_imgs[z] = add_marker(img[z],(low[1:],high[1:]), value)
     return marked_imgs
 
 def export_as_gif(filename, image_array, frames_per_second=10, rubber_band=False):
@@ -151,8 +149,9 @@ def random_crop_around_3D(img, bbox, crop_size, margin=[5,20,20]):
 
 def random_flip(img, bbox, axis=0):
     if np.random.rand()<0.5:
-        bbox[axis]=1-bbox[axis+3]
+        tmp=1-bbox[axis+3]
         bbox[axis+3]=1-bbox[axis]
+        bbox[axis]=tmp
         return np.flip(img, axis=axis), bbox
     else:
         return img, bbox
@@ -230,9 +229,9 @@ class LUNA16_Dataset(Dataset):
                     result["bbox_imgs"].append(None)
                 
             # random flip (also flip the bbox)
-            pixel_values,bbox = random_flip(cropped_img, bbox, 0)
-            pixel_values,bbox = random_flip(pixel_values, bbox, 1)
-            pixel_values,bbox = random_flip(pixel_values, bbox, 2)
+            pixel_values, bbox = random_flip(cropped_img, bbox, 0)
+            pixel_values, bbox = random_flip(pixel_values, bbox, 1)
+            pixel_values, bbox = random_flip(pixel_values, bbox, 2)
 
             # normalize
             pixel_values = (pixel_values-LUNA16_Dataset.mean)/LUNA16_Dataset.std

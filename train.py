@@ -60,9 +60,9 @@ def train(data_dir, log_dir, model_dir=None, resume=True):
         per_device_eval_batch_size=2,
         max_steps=1000000,
         weight_decay=0.01,
-        eval_steps=5000,
+        eval_steps=2000,
         logging_steps=200,
-        save_steps=5000,
+        save_steps=2000,
         save_total_limit=5,
         dataloader_num_workers=2,
         load_best_model_at_end=True,
@@ -87,4 +87,5 @@ def train(data_dir, log_dir, model_dir=None, resume=True):
     trainer.train(resume_from_checkpoint=resume)
 
 if __name__=="__main__":
-    train(data_dir="datasets/luna16", log_dir="logs", model_dir="luna-train", resume=False)
+    run_name = "412"
+    train(data_dir="datasets/luna16", log_dir=f"logs/{run_name}", model_dir=f"luna-train/{run_name}", resume=False)
