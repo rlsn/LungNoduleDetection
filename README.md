@@ -9,7 +9,7 @@ Using a 3D Vision Transformer (ViT) to detect lung nodules from CT images throug
 The data is already stored in metaImage format and can be loaded and processed at runtime. Use `dataset.preprocess()` to convert raw files to npy files for faster loading.
 The preprocessing procedure is simple: the images are randomly cropped into patches of size [40,128,128], normalized and randomly flipped. The dataset is split into 10 subsets and 1 of them is held out for testing.
 
-## Usage
+## Training
 Configure the model with `model_config.json`, and training settings are in `train.py`. Then simply run
 ```
 python train.py
