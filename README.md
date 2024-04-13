@@ -16,7 +16,7 @@ python train.py
 ```
 
 ## Results
-The model is trained for 100k steps using the settings in `model_config.json` and `train.py`. The final training loss is 0.0478, test f1 score=0.882, test iuo=0.268, and test auc=0.982. The testset ROC is shown below.
+The model is trained for 100k steps using the settings in `model_config.json` and `train.py`. The final training loss is 0.0478, test accuracy=0.93, test iuo=0.276, and test auc=0.985. The testset ROC is shown below.
 
 <img src = "imgs/roc.png" width ="50%" />
 
