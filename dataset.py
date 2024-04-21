@@ -166,6 +166,25 @@ def iou_3d(bbox_pred,bbox):
     o_vol = np.prod(bbox_pred[:,3:]-bbox_pred[:,:3],-1)+np.prod(bbox[:,3:]-bbox[:,:3],-1)-i_vol
     return (i_vol/o_vol).mean()
 
+def sliding_window_3d(x, window_size, stride_size):
+    """
+    x: [d,w,h]
+    window_size: [d,w,h]
+    stride_size: [d,w,h]
+    return: [b,d,w,h]
+    """
+    
+    window_offsets = [list(np.arange(x.shape[i]-window_size[i])[::stride_size[i]])+[x.shape[i]-window_size[i]] for i in range(3)]
+    offsets = []
+    outputs = []
+    for i in window_offsets[0]:
+        for j in window_offsets[1]:
+            for k in window_offsets[2]:
+                offsets.append([i,j,k])
+                outputs.append(x[i:i+window_size[0],j:j+window_size[1],k:k+window_size[2]])
+    
+    return np.array(offsets), np.array(outputs)
+
 def collate_fn(examples):
     pixel_values = torch.cat([example["pixel_values"] for example in examples], 0)
     labels = torch.cat([example["labels"] for example in examples], 0)
@@ -200,17 +219,58 @@ class LUNA16_Dataset(Dataset):
 
         self.samples_per_img = samples_per_img
         self.max_sampling_times = max(LUNA16_Dataset.max_sampling_times, self.samples_per_img)
+        self.train = True
+
+    def train(self):
+        self.train = True
+        return self
+        
+    def eval(self):
+        self.train = False
+        return self
+        
     def __len__(self):
         return len(self.filenames)
-
+        
     def __getitem__(self, idx):
+        if self.train:
+            return self._get_train_samples(idx)
+        else:
+            return self._get_eval_samples(idx)
+            
+    def _get_eval_samples(self, idx):
+        fn = self.filenames[idx]
+        uid = getUID(fn)
+        image, origin, space = read_image(fn)
+        coords = self.annotations[uid]
+        patch_size_mm = self.patch_size * space[::-1]
+        result = dict(pixel_values=[],labels=[],bbox=[])
+
+        bboxes = []
+        for coord in coords:
+            bboxes.append(np.concatenate(convert_bounding_box(coord, origin, space),0))
+        bboxes = np.array(bboxes)
+        
+        # get patches with sliding window
+        offsets, pixel_values=sliding_window_3d(image,self.crop_size,self.crop_size//2)
+
+        # normalize        
+        pixel_values = (pixel_values-LUNA16_Dataset.mean)/LUNA16_Dataset.std
+        
+        result["pixel_values"] = torch.tensor(pixel_values,dtype=torch.float32).unsqueeze(1)
+        result["offsets"] = torch.tensor(offsets,dtype=torch.int32)
+        result["bbox"] = torch.tensor(bboxes,dtype=torch.int32)
+                
+        return result
+        
+    def _get_train_samples(self, idx):
         fn = self.filenames[idx]
         uid = getUID(fn)
         image, origin, space = read_image(fn)
         coords = self.annotations[uid]
         patch_size_mm = self.patch_size * space[::-1]
         
-        result = dict(pixel_values=[],labels=[],bbox=[],bbox_imgs=[])
+        result = dict(pixel_values=[],labels=[],bbox=[])
         
         bboxes = []
         for coord in coords:
