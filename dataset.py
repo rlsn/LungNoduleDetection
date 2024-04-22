@@ -50,11 +50,11 @@ def survey_dataset(datadir=".",npy=True):
 
 def convert_loc(coord, origin, space):
     displacement = np.array(coord[:3]).astype(float)-origin
-    loc = np.round(displacement/space)[::-1]
+    loc = (displacement/space)[::-1]
     return loc
 
 def convert_radius(coord, space):
-    r = np.round(float(coord[-1])/2/space)[::-1]
+    r = (float(coord[-1])/2/space)[::-1]
     return r
 
 def convert_bounding_box(coord, origin, space):
@@ -159,6 +159,9 @@ def random_flip(img, bbox, axis=0):
         return img, bbox
 
 def iou_3d(bbox_pred,bbox):
+    if len(bbox_pred.shape)==1:
+        bbox_pred = np.expand_dims(bbox_pred,0)
+        bbox = np.expand_dims(bbox,0)
     ilow = np.maximum(bbox_pred,bbox)[:,:3]
     ihigh = np.minimum(bbox_pred,bbox)[:,3:]
     i_sides = np.maximum(ihigh-ilow,0)
@@ -252,14 +255,18 @@ class LUNA16_Dataset(Dataset):
         bboxes = np.array(bboxes)
         
         # get patches with sliding window
-        offsets, pixel_values=sliding_window_3d(image,self.crop_size,self.crop_size//2)
+        offsets, pixel_values=sliding_window_3d(image,self.crop_size,(self.crop_size*0.75).astype(int))
 
         # normalize        
         pixel_values = (pixel_values-LUNA16_Dataset.mean)/LUNA16_Dataset.std
         
         result["pixel_values"] = torch.tensor(pixel_values,dtype=torch.float32).unsqueeze(1)
         result["offsets"] = torch.tensor(offsets,dtype=torch.int32)
-        result["bbox"] = torch.tensor(bboxes,dtype=torch.int32)
+        result["bbox"] = torch.tensor(bboxes,dtype=torch.int32)        
+        result["coords"] = np.array(coords).astype(float)
+        result["origin"] = origin
+        result["space"] = space
+        result["uid"] = uid
                 
         return result
         
